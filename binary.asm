@@ -84,9 +84,7 @@ false:
 	
 	j findItem
 binarySearch:
-	addi $sp, $sp, -4
-	sw $ra, 0($sp)
-	
+
 	li $t0, 0
 	subu $t0, $t2, $t1		# (end - start) = array length
 	
@@ -153,7 +151,6 @@ restart:
 	syscall
 	j main
 true:
-	lw $ra, 0($sp)
-	addi $sp, $sp, 4
+
 	li $v1, 1			# Return true
 	jr $ra
