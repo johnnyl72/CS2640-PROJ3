@@ -1,15 +1,15 @@
 # Who:  Johnny Lam
 # What: bst_proj3.asm
 # Why:  Project 3
-# When: Created: 3/25/2019 Due: 4/2/2019
+# When: Created: 3/26/2019 Due: 4/2/2019
 # How:  List the uses of registers
 
 .data
 array:			.space			160    # 40 integers max
 promptSize:		.asciiz 		"How many integers?  "
-promptSearch:	.asciiz 		"\nSearch for which integer?  "
+promptSearch:	.asciiz 		"Search for which integer?  "
 blank:         	.asciiz 		" "
-
+promptInsert:	.asciiz			"Enter an integer: "
 
 .text
 .globl main
@@ -35,10 +35,14 @@ main:	# program entry
      li $t4, 0	   # newly element that needs to be compared
    
 getinputs:     # Grab an integer input
+     la $a0, promptInsert
+     li $v0, 4
+     syscall
+     
      la $s2, array
      li $v0, 5
      syscall
-
+     
      move $t4, $v0     # t4 stores integer input
 
 sort: 
@@ -92,6 +96,11 @@ printarray:     # Print all array items
     #s2 now points to end of array + 4
 #############################
 finditem:     # Gather input for item to look for
+     
+     li $a0, '\n'
+     li $v0, 11
+     syscall
+     
      la $a0, promptSearch
      li $v0, 4
      syscall
@@ -122,10 +131,10 @@ binarysearch:
      sw $ra, 0($sp)
 	#t2 end t1 base
      li $t0, 0
-     li $t3, 0
-     subu $t0, $t2, $t1		#high - low
+
+     subu $t0, $t2, $t1		#high index - low index
      #Array size not 1, we continue search 
-     bne $t0, 0, search
+     bne $t0, $zero, search
 
      #Base case when front = end 
      #IF FRONT = END = VALUE RETURN TRUE
@@ -136,23 +145,17 @@ binarysearch:
      j false
 
 search:
-
-     srl $t0, $t0, 2
-     
-obtainMiddleIndex:
-     addiu $t3, $t3, 4
-     blt $t3, $t0, obtainMiddleIndex     
-     #srl $t0, $t0, 4 		# shift right 3
-     #sll $t0, $t0, 3		# shift left 2
+     srl $t0, $t0, 3 		# shift right 3
+     sll $t0, $t0, 2		# shift left 2
      #cannot do srl 2 because not word align i.e. if length is 12 divided 2 = 6, not align
-     addu $t4, $t1, $t3         # Calculate midpoint, offset from left index
-     lw $t3, 0($t4)             # Store value of midpoint of array
-	
+     addu $t4, $t1, $t0         # Calculate midpoint, offset from left index
+     lw $t0, 0($t4)             # Store value of midpoint of array
+ 
      # if (array[mid] == searchVal) 
-     beq $s3, $t3, return
+     beq $s3, $t0, return
      
      # if (array[mid] > searchVal )
-     blt $s3, $t3, look_left
+     blt $s3, $t0, look_left
   
      # else return binarySearch(array, mid+1, end, searchVal)
 look_right:
