@@ -100,14 +100,16 @@ finditem:     # Gather input for item to look for
      syscall
      move $s3, $v0
 
-     li $t0, 0		  # array length
+     
      la $t1, array        # t1 = base address
-     addiu $t2, $s2, -4    # t2 set to last index now 
-     li $t5, 1            # Defaults to 1, which means value found, 0 not found
-
+     addiu $t2, $s2, 0    # t2 set to last index now 
+     #li $t5, 1            # Defaults to 1, which means value found, 0 not found
+     #li $a0, 1
+     #li $t0, 0		  # array length
      jal binarysearch     # Do a binary search
 
-     move $a0, $t5        # Load t5 in a0, output 1 or 0 whether or not value was found
+     #move $a0, $t5        # Load t5 in a0, output 1 or 0 whether or not value was found
+     false:
      li $v0, 1
      syscall
 
@@ -116,49 +118,57 @@ finditem:     # Gather input for item to look for
 binarysearch:
 	
      #PUSH RA INTO STACK MEMORY
-     addiu $sp, $sp, -4
+     addi $sp, $sp, -4
      sw $ra, 0($sp)
-
-     subu $t0, $t2, $t1
+	#t2 end t1 base
+     li $t0, 0
+     li $t3, 0
+     subu $t0, $t2, $t1		#high - low
      #Array size not 1, we continue search 
      bne $t0, 0, search
-	
+
      #Base case when front = end 
      #IF FRONT = END = VALUE RETURN TRUE
-     move $t4, $t1
-     lw $t0, 0($t4)           
+     lw $t0, 0($t1)           
      beq $s3, $t0, return     
      #ELSE RETURN FALSE
-     li $t5, 0                # Set t5 to 0 if item is not found
-     j return
+     li $a0, 0                
+     j false
 
 search:
-     srl $t0, $t0, 3		# dividing by 8
-     sll $t0, $t0, 2		# multiplying by 4
-     #net becomes divided by 2
-     addu $t4, $t1, $t0         # Calculate midpoint, offset from left index
-     lw $t0, 0($t4)             # Store value of midpoint of array
+
+     srl $t0, $t0, 2
+     
+obtainMiddleIndex:
+     addiu $t3, $t3, 4
+     blt $t3, $t0, obtainMiddleIndex     
+     #srl $t0, $t0, 4 		# shift right 3
+     #sll $t0, $t0, 3		# shift left 2
+     #cannot do srl 2 because not word align i.e. if length is 12 divided 2 = 6, not align
+     addu $t4, $t1, $t3         # Calculate midpoint, offset from left index
+     lw $t3, 0($t4)             # Store value of midpoint of array
 	
      # if (array[mid] == searchVal) 
-     beq $s3, $t0, return
+     beq $s3, $t3, return
      
-     # if (array[mid] > searchVal
-     blt $s3, $t0, look_left
+     # if (array[mid] > searchVal )
+     blt $s3, $t3, look_left
   
-     # else return binarySearch(array, mid+1, end, searchVal); } 
+     # else return binarySearch(array, mid+1, end, searchVal)
 look_right:
-     addiu $t1, $t4, 4    # Right bsearch, left = mid+1
+     addi $t1, $t4, 4    # start = mid+1
      jal binarysearch     # Recursive call to binary search
      j return             # Finished, return back to caller
-
+     # return binarySearch(array, start, mid-1, searchVal) 
 look_left:
-     move $t2, $t4        # Keep searching to the left
+     addi $t4, $t4, -4
+     move $t2, $t4        # end = mid -1
      jal binarysearch     # Recursive call to binary search
      
 return:
      lw $ra, 0($sp)       # Obtain back return address from stack pointer
      addiu $sp, $sp, 4    # Release 4 bytes on stack
-
+     li $a0, 1
      jr $ra                # Return to caller
 
 exit:
