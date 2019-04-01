@@ -89,7 +89,7 @@ printarray:     # Print all array items
      addi $t1, $t1, 1	#Counter
      blt $t1, $s0, printarray	#Once done sorting and printing, begin search
     
-    #s2 now points to end of array
+    #s2 now points to end of array + 4
 #############################
 finditem:     # Gather input for item to look for
      la $a0, promptSearch
@@ -102,7 +102,7 @@ finditem:     # Gather input for item to look for
 
      li $t0, 0		  # array length
      la $t1, array        # t1 = base address
-     addiu $t2, $s2, 0    # t2 set to last - 1
+     addiu $t2, $s2, -4    # t2 set to last index now 
      li $t5, 1            # Defaults to 1, which means value found, 0 not found
 
      jal binarysearch     # Do a binary search
@@ -133,8 +133,9 @@ binarysearch:
      j return
 
 search:
-     srl $t0, $t0, 3		#end - start shifted 3 
-     sll $t0, $t0, 2		#Divide by 2
+     srl $t0, $t0, 3		# dividing by 8
+     sll $t0, $t0, 2		# multiplying by 4
+     #net becomes divided by 2
      addu $t4, $t1, $t0         # Calculate midpoint, offset from left index
      lw $t0, 0($t4)             # Store value of midpoint of array
 	
