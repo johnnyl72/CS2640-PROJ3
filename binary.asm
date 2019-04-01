@@ -1,180 +1,166 @@
 # Who:  Johnny Lam
-# What: bst_proj3.asm
-# Why:  Project 3
-# When: Created: 3/26/2019 Due: 4/2/2019
+# What: project3_binary.asm
+# Why:  Project 3, insertion sort and then a binary search
+# When: Created when? 3/36/2019 Due when? 4/2/2019
 # How:  List the uses of registers
 
 .data
-array:			.space			160    # 40 integers max
-promptSize:		.asciiz 		"How many integers?  "
-promptSearch:	.asciiz 		"Search for which integer?  "
-blank:         	.asciiz 		" "
-promptInsert:	.asciiz			"Enter an integer: "
+
+array:			.space		160 # Array Size: 40 integers
+promptSize:		.asciiz		"How many integers in the array: "
+promptSearch:		.asciiz		"What number to search for: "
+promptInsert:		.asciiz		"Enter an integer to the array: "
+space:			.asciiz		" "
+error:			.asciiz		"Please enter a proper number! \n"
 
 .text
 .globl main
 
 
 main:	# program entry
-     la $a0, promptSize
-     li $v0, 4
-     syscall
-
-     li $v0, 5
-     syscall
-     move $s0, $v0		#s0 = array size
-
-     # Input validation
-     blez $s0, exit
-     li $t1, 40
-     bgt $s0, $t1, exit
-
-     li $t1, 0     # total items in array / counter
-     li $t2, 0	   # index pointer for comparisons
-     li $t3, 0	   # current integer in array to be compared with
-     li $t4, 0	   # newly element that needs to be compared
-   
-getinputs:     # Grab an integer input
-     la $a0, promptInsert
-     li $v0, 4
-     syscall
-     
-     la $s2, array
-     li $v0, 5
-     syscall
-     
-     move $t4, $v0     # t4 stores integer input
-
-sort: 
-     #if t2 = t1 we put t4 into last index ( done comparing with all )   
-     beq $t2, $t1, push
-
-     lw $t3, 0($s2)		#item to be compared with
-     ble $t4, $t3, swap		#Note: Ascending order!
-
-     addi $t2, $t2, 1		# Pointer
-     addi $s2, $s2, 4		# Iterate array
-     j sort
-
-swap:     
-     lw $t3, 0($s2)		#load old 
-     sw $t4, 0($s2)		#Store input into old's spot
-    
-     move $t4, $t3		#Move old value into input value
-     addi $t2, $t2, 1		# update pointer
-     addi $s2, $s2, 4		#Iterate array
-     j sort			#Now recurse with old's value 
-
-push:
-     sw $t4, 0($s2)		#Store input
-     addi $t1, $t1, 1		#Counter for total current size
-     li $t2, 0			#Set pointer back to 0
-     blt $t1, $s0, getinputs	#If array size is max, our array is ready
-
-
-     li $t1, 0			#Reuse counter for printing array until array size
-     la $a0, '\n'
-     li $v0, 11
-     syscall			#New Line
-     
-     #Reset pointer of array address
-     la $s2, array		
-
-printarray:     # Print all array items
-     lw $a0, 0($s2)
-     li $v0, 1
-     syscall
-     
-     la $a0, blank
-     li $v0, 4
-     syscall		#Space
-     
-     addi $s2, $s2, 4	#Iterate array
-     addi $t1, $t1, 1	#Counter
-     blt $t1, $s0, printarray	#Once done sorting and printing, begin search
-    
-    #s2 now points to end of array + 4
-#############################
-finditem:     # Gather input for item to look for
-     
-     li $a0, '\n'
-     li $v0, 11
-     syscall
-     
-     la $a0, promptSearch
-     li $v0, 4
-     syscall
-
-     li $v0, 5
-     syscall
-     move $s3, $v0
-
-     
-     la $t1, array        # t1 = base address
-     addiu $t2, $s2, 0    # t2 set to last index now 
-     #li $t5, 1            # Defaults to 1, which means value found, 0 not found
-     #li $a0, 1
-     #li $t0, 0		  # array length
-     jal binarysearch     # Do a binary search
-
-     #move $a0, $t5        # Load t5 in a0, output 1 or 0 whether or not value was found
-     false:
-     li $v0, 1
-     syscall
-
-     j finditem           # Repeat
-
-binarysearch:
+	la $a0, promptSize
+	li $v0, 4
+	syscall				# How many integers in the array: 
 	
-     #PUSH RA INTO STACK MEMORY
-     addi $sp, $sp, -4
-     sw $ra, 0($sp)
-	#t2 end t1 base
-     li $t0, 0
+	li $v0, 5
+	syscall 			# Read input
+	move $s0, $v0
+	
+	blez $s0, restart
+	li $t1, 40
+	bgt $s0, $t1, restart		
 
-     subu $t0, $t2, $t1		#high index - low index
-     #Array size not 1, we continue search 
-     bne $t0, $zero, search
+	li $t1, 0			# Counter for sorting
+	li $t2, 0			# Pointer for sorting
+	
+getInputs:
+	la $a0, promptInsert
+	li $v0, 4
+	syscall				# Enter an integer to the array: 
+	
+	li $v0, 5
+	syscall				# Read input
+	move $t0, $v0			# t0 = User input
+	
+	la $s1, array			# s1 = base array address
+	
+sort:
+	beq $t2, $t1, push
+	
+	lw $t3, 0($s1)			# t3 = old
+	ble $t0, $t3, swap		# new < old we swap, we're doing ascending order
+	
+	addi $t2, $t2, 1		# Pointer for sorting
+	addi $s1, $s1, 4		# Iterate next array
+	j sort				# If here, it means newest input is largest
+swap:
+	lw $t3, 0($s1)			# Temp = old
+	sw $t0, 0($s1)			# Store new into old's location
+	
+	move $t0, $t3			# New = old
+	addi $t2, $t2, 1		# Pointer update
+	addi $s1, $s1, 4		# Iterate next array
+	j sort
+push:
+	sw $t0, 0($s1)			# Store array 
+	addi $t1, $t1, 1		# Update counter for array size
+	li $t2, 0			# Reset pointer to 0 for comparing
+	blt $t1, $s0, getInputs		# Continue adding until full
+			
+	la $a0, '\n'
+	li $v0, 11	
+	syscall				# Print newline
+	
+	la $s1, array			# Reset array to base for printing
+	li $t1, 0			# Reuse t1 for printing counter
+printArray:
+	lw $a0, 0($s1)
+	li $v0, 1
+	syscall				# Print element in array
+	
+	la $a0, space
+	li $v0, 4
+	syscall				# Print space
+	
+	addi $t1, $t1, 1		# Counter for printing
+	addi $s1, $s1, 4		# Iterate array
+	blt $t1, $s0, printArray
+	#Note s1 is array end + 4
+findItem:
+	li $a0, '\n'
+	li $v0, 11
+	syscall
+	
+	la $a0, promptSearch
+	li $v0, 4
+	syscall				# What number to search for: 
+	
+	li $v0, 5
+	syscall
+	move $s2, $v0			# s2 = Search value
 
-     #Base case when front = end 
-     #IF FRONT = END = VALUE RETURN TRUE
-     lw $t0, 0($t1)           
-     beq $s3, $t0, return     
-     #ELSE RETURN FALSE
-     li $a0, 0                
-     j false
+	la $t1, array			# t1 = start (base address)
+	move $t2, $s1			# t2 = end   (end address)
+	jal binarySearch
+#RETURN TRUE OR FALSE
+false:	
+	li $v0, 1
+	syscall
+	
+	j findItem
+binarySearch:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	li $t0, 0
+	subu $t0, $t2, $t1		# (end - start) = array length
+	
+	# if (start > end)
+	bge $t1, $t2, else		#Return false
+	beq $t0, $zero, else
+	j recurse
+else:	
+	lw $t0, 0($t1)			# t0 = array[mid]
+	# if (array[mid] == searchVal)
+	beq $t0, $s2, true		#Return true
 
-search:
-     srl $t0, $t0, 3 		# shift right 3
-     sll $t0, $t0, 2		# shift left 2
-     #cannot do srl 2 because not word align i.e. if length is 12 divided 2 = 6, not align
-     addu $t4, $t1, $t0         # Calculate midpoint, offset from left index
-     lw $t0, 0($t4)             # Store value of midpoint of array
- 
-     # if (array[mid] == searchVal) 
-     beq $s3, $t0, return
-     
-     # if (array[mid] > searchVal )
-     blt $s3, $t0, look_left
-  
-     # else return binarySearch(array, mid+1, end, searchVal)
-look_right:
-     addi $t1, $t4, 4    # start = mid+1
-     jal binarysearch     # Recursive call to binary search
-     j return             # Finished, return back to caller
-     # return binarySearch(array, start, mid-1, searchVal) 
-look_left:
-     addi $t4, $t4, -4
-     move $t2, $t4        # end = mid -1
-     jal binarysearch     # Recursive call to binary search
-     
-return:
-     lw $ra, 0($sp)       # Obtain back return address from stack pointer
-     addiu $sp, $sp, 4    # Release 4 bytes on stack
-     li $a0, 1
-     jr $ra                # Return to caller
+	li $a0, 0
+	j false				#Return false
+recurse:
+	# Obtain middle index, shift right and left to get index as a multiple of 4
+	# because each element is aligned by 4 else error
+	srl $t0, $t0, 3
+	sll $t0, $t0, 2			# (end - start)/2
+	
+	# t3 = middle index , reassigned: t0 = array[mid] value
+	addu $t3, $t1, $t0 		# middle index = start + (end - start) / 2;
+	lw $t0, 0($t3)			# value at middle index
+	# if (array[mid] == searchVal)
+	beq $t0, $s2, true
+	# if ( array[mid] > searchVal)
+	bgt $t0, $s2, searchLeft	
+	
+	#return binarySearch(array, start, mid-1, searchVal); 
+searchRight:
+	addi $t1, $t3, 4		# start = mid + 1
+	jal binarySearch
 
-exit:
-     li $v0, 10
-     syscall
+	j true			# Finished
+searchLeft:
+	addi $t2, $t3, -4		# end = mid - 1
+	jal binarySearch
+true:
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	li $a0, 1			# Return true
+	jr $ra
+	
+terminate:
+	li $v0, 10		# terminate the program
+	syscall
 
+restart:
+	la $a0, error
+	li $v0, 4
+	syscall
+	j main
