@@ -117,6 +117,7 @@ binarySearch:
 	
 	# if (start > end)
 	bge $t1, $t2, else		#Return false
+	# Basecase when last element is left to check
 	beq $t0, $zero, else
 	j recurse
 else:	
@@ -143,18 +144,10 @@ recurse:
 	#return binarySearch(array, start, mid-1, searchVal); 
 searchRight:
 	addi $t1, $t3, 4		# start = mid + 1
-	jal binarySearch
-
-	j true			# Finished
+	j binarySearch
 searchLeft:
 	addi $t2, $t3, -4		# end = mid - 1
-	jal binarySearch
-true:
-	lw $ra, 0($sp)
-	addi $sp, $sp, 4
-	li $a0, 1			# Return true
-	jr $ra
-	
+	j binarySearch	
 terminate:
 	li $v0, 10		# terminate the program
 	syscall
@@ -164,3 +157,8 @@ restart:
 	li $v0, 4
 	syscall
 	j main
+true:
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	li $a0, 1			# Return true
+	jr $ra
