@@ -27,12 +27,9 @@ main:	# program entry
 	move $s0, $v0
 	
 	blez $s0, restart
-	li $t1, 40
-	bgt $s0, $t1, restart		
+	li $t0, 40
+	bgt $s0, $t0, restart		
 
-	li $t1, 0			# Counter for sorting
-	li $t2, 0			# Pointer for sorting
-	
 getInputs:
 	la $a0, promptInsert
 	li $v0, 4
@@ -43,30 +40,8 @@ getInputs:
 	move $t0, $v0			# t0 = User input
 	
 	la $s1, array			# s1 = base array address
-	
-sort:
-	beq $t2, $t1, push
-	
-	lw $t3, 0($s1)			# t3 = old
-	ble $t0, $t3, swap		# new < old we swap, we're doing ascending order
-	
-	addi $t2, $t2, 1		# Pointer for sorting
-	addi $s1, $s1, 4		# Iterate next array
-	j sort				# If here, it means newest input is largest
-swap:
-	lw $t3, 0($s1)			# Temp = old
-	sw $t0, 0($s1)			# Store new into old's location
-	
-	move $t0, $t3			# New = old
-	addi $t2, $t2, 1		# Pointer update
-	addi $s1, $s1, 4		# Iterate next array
-	j sort
-push:
-	sw $t0, 0($s1)			# Store array 
-	addi $t1, $t1, 1		# Update counter for array size
-	li $t2, 0			# Reset pointer to 0 for comparing
-	blt $t1, $s0, getInputs		# Continue adding until full
-			
+	jal sort
+		
 	la $a0, '\n'
 	li $v0, 11	
 	syscall				# Print newline
@@ -104,6 +79,7 @@ findItem:
 	jal binarySearch
 #RETURN TRUE OR FALSE
 false:	
+	move $a0, $v1			#Return value from v1 register
 	li $v0, 1
 	syscall
 	
@@ -125,7 +101,7 @@ else:
 	# if (array[mid] == searchVal)
 	beq $t0, $s2, true		#Return true
 
-	li $a0, 0
+	li $v1, 0
 	j false				#Return false
 recurse:
 	# Obtain middle index, shift right and left to get index as a multiple of 4
@@ -140,7 +116,6 @@ recurse:
 	beq $t0, $s2, true
 	# if ( array[mid] > searchVal)
 	bgt $t0, $s2, searchLeft	
-	
 	#return binarySearch(array, start, mid-1, searchVal); 
 searchRight:
 	addi $t1, $t3, 4		# start = mid + 1
@@ -149,9 +124,32 @@ searchLeft:
 	addi $t2, $t3, -4		# end = mid - 1
 	j binarySearch	
 terminate:
-	li $v0, 10		# terminate the program
+	li $v0, 10			# terminate the program
 	syscall
 
+sort:
+	beq $t2, $t1, push		#t1 counter for adding array
+	
+	lw $t3, 0($s1)			# t3 = old
+	ble $t0, $t3, swap		# new < old we swap, we're doing ascending order
+	
+	addi $t2, $t2, 1		# Pointer for sorting
+	addi $s1, $s1, 4		# Iterate next array
+	j sort				# If here, it means newest input is largest
+swap:
+	lw $t3, 0($s1)			# Temp = old
+	sw $t0, 0($s1)			# Store new into old's location
+	
+	move $t0, $t3			# New = old
+	addi $t2, $t2, 1		# Pointer update
+	addi $s1, $s1, 4		# Iterate next array
+	j sort
+push:
+	sw $t0, 0($s1)			# Store array 
+	addi $t1, $t1, 1		# Update counter for array size
+	li $t2, 0			# Reset pointer to 0 for comparing
+	blt $t1, $s0, getInputs		# Continue adding until full
+	jr $ra	
 restart:
 	la $a0, error
 	li $v0, 4
@@ -160,5 +158,5 @@ restart:
 true:
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4
-	li $a0, 1			# Return true
+	li $v1, 1			# Return true
 	jr $ra
