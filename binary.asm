@@ -2,7 +2,7 @@
 # What: project3_binary.asm
 # Why:  Project 3, insertion sort and then a binary search
 # When: Created when? 3/36/2019 Due when? 4/2/2019
-# How:  List the uses of registers
+# How:  Registers: $v1 (return), $t0, $t1, $t2, $t3, $s0, $s1, $s2 (8)
 
 .data
 
@@ -29,7 +29,6 @@ main:	# program entry
 	blez $s0, restart
 	li $t0, 40
 	bgt $s0, $t0, restart		
-
 getInputs:
 	la $a0, promptInsert
 	li $v0, 4
@@ -93,10 +92,9 @@ binarySearch:
 	
 	# if (start > end)
 	bge $t1, $t2, else		#Return false
-	# Basecase when last element is left to check
-	beq $t0, $zero, else
 	j recurse
 else:	
+	# Basecase when last element is left to check
 	lw $t0, 0($t1)			# t0 = array[mid]
 	# if (array[mid] == searchVal)
 	beq $t0, $s2, true		#Return true
@@ -126,7 +124,6 @@ searchLeft:
 terminate:
 	li $v0, 10			# terminate the program
 	syscall
-
 sort:
 	beq $t2, $t1, push		#t1 counter for adding array
 	
